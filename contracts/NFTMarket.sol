@@ -59,12 +59,13 @@ contract NFTMarket {
         emit Asked(tokenID, msg.sender, price);
     }
 
-    function bid(uint tokenID) external {
+    function bid(uint tokenID, uint _price) external {
         address seller = sellerMap[tokenID]; 
         require(seller != address(0), "Not asked");
         require(seller != msg.sender, "Your own token");
 
         uint price = priceMap[tokenID];
+        require(_price == price, "Price is out of line");
         uint fee = (price * tfee) / 100;
 
         IERC721(nft).transferFrom(address(this), msg.sender, tokenID);
