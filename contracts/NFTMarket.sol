@@ -49,7 +49,7 @@ contract NFTMarket {
 
     function ask(uint tokenID, uint price) external {
         require(_isApprovedOrOwner(msg.sender, tokenID), "Not approved or owner");
-        require(price > minimumPrice, 'bad price');
+        require(price > minimumPrice, "bad price");
 
         IERC721(nft).transferFrom(msg.sender, address(this), tokenID);
 

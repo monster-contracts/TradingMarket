@@ -44,8 +44,9 @@ contract AssetMarket {
     }
 
     event Asked(uint8 indexed roleIndex, uint indexed tokenID, uint amount, uint price);
+    event Refilled(uint8 indexed roleIndex, uint indexed tokenID, uint amount);
     event Bidded(uint8 buyerRoleIndex, uint buyer, uint8 sellerRoleIndex, uint seller, uint amount, uint price, uint fee);
-    event Cancelled(uint8 indexed roleIndex, uint indexed tokenID, uint amount);
+    event Cancelled(uint8 indexed roleIndex, uint indexed tokenID);
     event Updated(uint8 indexed roleIndex, uint indexed tokenID, uint price);
  
     function setTfee(uint _tfee) external {
@@ -63,15 +64,29 @@ contract AssetMarket {
     function ask(uint8 roleIndex, uint tokenID, uint amount, uint price) external {
         address role = IAssetBox(asset).getRole(roleIndex);
         require(_isApprovedOrOwner(role, msg.sender, tokenID), "Not approved or owner");
-        require(price > minimumPrice, 'bad price');
+        require(price > minimumPrice, "bad price");
+        
+        IAssetBox(asset).burn(roleIndex, tokenID, amount);
+        
+        Order storage order = orderMap[roleIndex][tokenID];
+        require(order.amount == 0, "Can refill only");
+        order.amount = amount;
+        order.price = price;
+
+        emit Asked(roleIndex, tokenID, amount, price);
+    }
+
+    function refill(uint8 roleIndex, uint tokenID, uint amount) external {
+        address role = IAssetBox(asset).getRole(roleIndex);
+        require(_isApprovedOrOwner(role, msg.sender, tokenID), "Not approved or owner");
 
         IAssetBox(asset).burn(roleIndex, tokenID, amount);
         
         Order storage order = orderMap[roleIndex][tokenID];
+        require(order.amount > 0, "Can ask only");
         order.amount += amount;
-        order.price = price;
 
-        emit Asked(roleIndex, tokenID, amount, price);
+        emit Refilled(roleIndex, tokenID, amount);
     }
 
     function bid(uint8 buyerRoleIndex, uint buyer, uint8 sellerRoleIndex, uint seller, uint amount, uint price) external {
@@ -97,29 +112,29 @@ contract AssetMarket {
         emit Bidded(buyerRoleIndex, buyer, sellerRoleIndex, seller, amount, price, fee);
     }
 
-    function cancel(uint8 roleIndex, uint tokenID, uint amount) external {
+    function cancel(uint8 roleIndex, uint tokenID) external {
         address role = IAssetBox(asset).getRole(roleIndex);
         require(_isApprovedOrOwner(role, msg.sender, tokenID), "Not approved or owner");
         
-        IAssetBox(asset).burn(roleIndex, tokenID, amount);
-        
         Order storage order = orderMap[roleIndex][tokenID];
-        require(order.amount >= amount, "Amount not enough");
-        order.amount -= amount;
 
-        emit Cancelled(roleIndex, tokenID, amount);
+        require(order.amount > 0, "Amount not enough");
+        IAssetBox(asset).burn(roleIndex, tokenID, order.amount);        
+        order.amount = 0;
+
+        emit Cancelled(roleIndex, tokenID);
     }
 
-    function update(uint8 roleIndex, uint tokenID, uint price) external {
-        address role = IAssetBox(asset).getRole(roleIndex);
-        require(_isApprovedOrOwner(role, msg.sender, tokenID), "Not approved or owner");
-        require(price > minimumPrice, 'bad price');
+    // function update(uint8 roleIndex, uint tokenID, uint price) external {
+    //     address role = IAssetBox(asset).getRole(roleIndex);
+    //     require(_isApprovedOrOwner(role, msg.sender, tokenID), "Not approved or owner");
+    //     require(price > minimumPrice, 'bad price');
 
-        Order storage order = orderMap[roleIndex][tokenID];
-        order.price = price;
+    //     Order storage order = orderMap[roleIndex][tokenID];
+    //     order.price = price;
 
-        emit Updated(roleIndex, tokenID, price);
-    }
+    //     emit Updated(roleIndex, tokenID, price);
+    // }
 
     function withdrawal(address recipient, uint amount) external {
         require(msg.sender == owner, "Only Owner");
