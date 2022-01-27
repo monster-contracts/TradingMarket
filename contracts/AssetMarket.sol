@@ -98,7 +98,7 @@ contract AssetMarket {
         require(order.price == price, "Price is out of line");
 
         uint totalPrice = price * amount;
-        uint fee = (totalPrice * tfee) / 100;
+        uint fee = (totalPrice * tfee) / 10000;
 
         address sellerRole = IAssetBox(asset).getRole(sellerRoleIndex);
         address sellerOwner = IERC721(sellerRole).ownerOf(seller);
@@ -119,7 +119,7 @@ contract AssetMarket {
         Order storage order = orderMap[roleIndex][tokenID];
 
         require(order.amount > 0, "Amount not enough");
-        IAssetBox(asset).burn(roleIndex, tokenID, order.amount);        
+        IAssetBox(asset).mint(roleIndex, tokenID, order.amount);
         order.amount = 0;
 
         emit Cancelled(roleIndex, tokenID);

@@ -66,7 +66,7 @@ contract NFTMarket {
 
         uint price = priceMap[tokenID];
         require(_price == price, "Price is out of line");
-        uint fee = (price * tfee) / 100;
+        uint fee = (price * tfee) / 10000;
 
         IERC721(nft).transferFrom(address(this), msg.sender, tokenID);
         IERC20(token).transferFrom(msg.sender, seller, price - fee);
