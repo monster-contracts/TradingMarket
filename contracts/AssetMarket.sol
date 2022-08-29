@@ -44,8 +44,8 @@ contract AssetMarket {
     }
 
     event Asked(uint8 indexed roleIndex, uint indexed tokenID, uint amount, uint price);
-    event Refilled(uint8 indexed roleIndex, uint indexed tokenID, uint amount);
-    event Bidded(uint8 buyerRoleIndex, uint buyer, uint8 sellerRoleIndex, uint seller, uint amount, uint price, uint fee);
+    event Refilled(uint8 indexed roleIndex, uint indexed tokenID, uint amount, uint remain);
+    event Bidded(uint8 buyerRoleIndex, uint buyer, uint8 sellerRoleIndex, uint seller, uint amount, uint remain, uint price, uint fee);
     event Cancelled(uint8 indexed roleIndex, uint indexed tokenID);
     event Updated(uint8 indexed roleIndex, uint indexed tokenID, uint price);
  
@@ -86,7 +86,7 @@ contract AssetMarket {
         require(order.amount > 0, "Can ask only");
         order.amount += amount;
 
-        emit Refilled(roleIndex, tokenID, amount);
+        emit Refilled(roleIndex, tokenID, amount, order.amount);
     }
 
     function bid(uint8 buyerRoleIndex, uint buyer, uint8 sellerRoleIndex, uint seller, uint amount, uint price) external {
@@ -109,7 +109,7 @@ contract AssetMarket {
         
         order.amount -= amount;
 
-        emit Bidded(buyerRoleIndex, buyer, sellerRoleIndex, seller, amount, price, fee);
+        emit Bidded(buyerRoleIndex, buyer, sellerRoleIndex, seller, amount, order.amount, price, fee);
     }
 
     function cancel(uint8 roleIndex, uint tokenID) external {
